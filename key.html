@@ -3,86 +3,150 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Verify Key</title>
+<title>Hacker System - Verify Key</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
-* { box-sizing: border-box; }
+/* Reset & Base */
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-    margin: 0; min-height: 100vh;
-    background: linear-gradient(135deg, #0f0f11, #000000);
-    background-image: radial-gradient(circle at 50% 0%, #1a3a5c 0%, transparent 70%);
-    display: flex; justify-content: center; align-items: center;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #000;
+    overflow: hidden; /* Ẩn thanh cuộn để hiệu ứng canvas đẹp hơn */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Courier New', Courier, monospace; /* Font kiểu máy tính cổ điển */
 }
 
-.glass-box {
-    width: 90%; max-width: 340px;
-    padding: 30px 25px;
-    border-radius: 28px;
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(30px);
-    -webkit-backdrop-filter: blur(30px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 30px 60px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1);
+/* Hiệu ứng Matrix Canvas */
+#matrix-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+/* Hộp xác minh phong cách Terminal */
+.hacker-box {
+    position: relative;
+    z-index: 2;
+    width: 90%;
+    max-width: 400px;
+    padding: 40px 30px;
+    background: rgba(0, 0, 0, 0.85);
+    border: 2px solid #0f0;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
     text-align: center;
 }
 
-h3 { color: #fff; margin: 0 0 20px 0; font-weight: 500; letter-spacing: 0.5px; }
+h3 {
+    color: #0f0;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 25px;
+    text-shadow: 0 0 10px #0f0;
+    font-size: 1.5rem;
+}
 
+/* Input phong cách Command Line */
 input {
-    width: 100%; padding: 16px; margin-bottom: 15px;
-    border-radius: 16px; border: 1px solid rgba(255,255,255,0.08);
-    background: rgba(0,0,0,0.3); color: #fff; font-size: 16px;
-    text-align: center; outline: none; transition: 0.3s;
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 20px;
+    background: transparent;
+    border: 1px solid #0f0;
+    color: #0f0;
+    font-size: 18px;
+    text-align: center;
+    outline: none;
+    transition: all 0.3s;
 }
 
-input:focus { border-color: #0a84ff; background: rgba(0,0,0,0.5); }
+input:focus {
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+    background: rgba(0, 255, 0, 0.05);
+}
 
+/* Button phong cách Retro */
 button {
-    width: 100%; padding: 16px; border: none; border-radius: 16px;
-    background: #0a84ff; color: #fff;
-    font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.3s;
+    width: 100%;
+    padding: 15px;
+    border: 1px solid #0f0;
+    background: transparent;
+    color: #0f0;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: 0.3s;
+    position: relative;
+    overflow: hidden;
 }
 
-button:hover { background: #0071e3; transform: scale(1.02); }
-button:active { transform: scale(0.98); }
-button:disabled { background: #444; color: #888; cursor: not-allowed; }
+button:hover {
+    background: #0f0;
+    color: #000;
+    box-shadow: 0 0 20px #0f0;
+}
 
+button:active { transform: scale(0.95); }
+button:disabled { border-color: #050; color: #050; cursor: not-allowed; }
+
+/* Progress Bar kiểu Terminal */
 .progress-container {
-    margin-top: 15px; height: 6px; background: rgba(255,255,255,0.05);
-    border-radius: 10px; overflow: hidden; display: none;
+    margin-top: 20px;
+    height: 10px;
+    border: 1px solid #0f0;
+    display: none;
 }
 
 .progress-bar {
-    height: 100%; width: 0%; background: #0a84ff;
-    border-radius: 10px; transition: width 0.1s linear;
+    height: 100%;
+    width: 0%;
+    background: #0f0;
+    box-shadow: 0 0 10px #0f0;
 }
 
-#msg { margin-top: 15px; font-size: 13px; color: rgba(255,255,255,0.5); min-height: 20px; }
-.success { color: #32d74b !important; }
-.error { color: #ff453a !important; }
+#msg {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #0f0;
+    text-transform: uppercase;
+    min-height: 20px;
+}
+
+/* Trạng thái thông báo */
+.success { color: #0f0 !important; text-shadow: 0 0 10px #0f0; }
+.error { color: #f00 !important; border-color: #f00 !important; text-shadow: 0 0 10px #f00; }
+
+/* Hiệu ứng nhấp nháy cho text */
+.blink { animation: blinker 1s linear infinite; }
+@keyframes blinker { 50% { opacity: 0; } }
 </style>
 </head>
 
 <body>
 
-<div class="glass-box">
-    <h3>Xác Minh Hệ Thống</h3>
-    <input id="keyInput" placeholder="Nhập Key của bạn" autocomplete="off">
-    <button id="btnVerify" onclick="startVerify()">Đăng Nhập</button>
+<canvas id="matrix-canvas"></canvas>
+
+<div class="hacker-box">
+    <h3>> SYSTEM_ACCESS</h3>
+    <input id="keyInput" placeholder="ENTER ACCESS KEY..." autocomplete="off">
+    <button id="btnVerify" onclick="startVerify()">[ EXECUTE ]</button>
 
     <div class="progress-container" id="progress">
         <div class="progress-bar" id="bar"></div>
     </div>
 
-    <div id="msg">Vui lòng nhập key để tiếp tục...</div>
+    <div id="msg" class="blink">AWAITING INPUT...</div>
 </div>
 
 <script>
+// --- GIỮ NGUYÊN LOGIC FIREBASE ---
 const firebaseConfig = {
     apiKey: "AIzaSyAnZVbkcjZmVH8QC2mX6en3Rl68D2UnNTE",
     databaseURL: "https://keyquocdat-default-rtdb.asia-southeast1.firebasedatabase.app"
@@ -90,6 +154,47 @@ const firebaseConfig = {
 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db = firebase.database().ref("keys");
 
+// --- HIỆU ỨNG MATRIX RAIN ---
+const canvas = document.getElementById('matrix-canvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const nums = '0123456789';
+const alphabet = latin + nums;
+
+const fontSize = 16;
+const columns = canvas.width / fontSize;
+
+const rainDrops = [];
+
+for (let x = 0; x < columns; x++) {
+    rainDrops[x] = 1;
+}
+
+const draw = () => {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#0F0';
+    ctx.font = fontSize + 'px monospace';
+
+    for (let i = 0; i < rainDrops.length; i++) {
+        const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+        ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
+
+        if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+            rainDrops[i] = 0;
+        }
+        rainDrops[i]++;
+    }
+};
+
+setInterval(draw, 30);
+
+// --- GIỮ NGUYÊN LOGIC XỬ LÝ ---
 function startVerify() {
     const key = document.getElementById("keyInput").value.trim().toUpperCase().replace(/\s+/g, "");
     const msg = document.getElementById("msg");
@@ -98,7 +203,7 @@ function startVerify() {
     const btn = document.getElementById("btnVerify");
 
     if (!key) {
-        msg.textContent = "Bạn chưa nhập Key!";
+        msg.textContent = "> ERROR: KEY REQUIRED!";
         msg.className = "error"; return;
     }
 
@@ -107,7 +212,7 @@ function startVerify() {
     
     bar.style.width = "0%";
     progress.style.display = "block";
-    msg.textContent = "Đang kiểm tra dữ liệu...";
+    msg.textContent = "> DECRYPTING DATA...";
     msg.className = "";
 
     let percent = 0;
@@ -127,75 +232,52 @@ function verifyKeyInDatabase(key, msg, btn) {
 
     ref.transaction((currentData) => {
         if (currentData === null) return null; 
-
         if (currentData.type === "ONCE") {
             if (currentData.used === true) return undefined;
             currentData.used = true;
             return currentData;
         }
-
         if (currentData.type === "TIME") {
             if (Date.now() > currentData.expiresAt) return undefined;
             return currentData;
         }
-
-        if (currentData.type === "INFINITE") {
-            return currentData;
-        }
-
+        if (currentData.type === "INFINITE") return currentData;
         return undefined;
     }, (error, committed, snapshot) => {
-        
         btn.disabled = false;
         document.getElementById("keyInput").disabled = false;
 
         if (error) {
-            msg.textContent = "Lỗi kết nối máy chủ!";
+            msg.textContent = "> SERVER CONNECTION ERROR!";
             msg.className = "error";
         } else if (!snapshot.exists()) {
-            msg.textContent = "Key không tồn tại!";
+            msg.textContent = "> KEY NOT FOUND!";
             msg.className = "error";
         } else if (!committed) {
-            msg.textContent = "Key đã hết hạn sử dụng!";
-
+            msg.textContent = "> KEY EXPIRED OR USED!";
             msg.className = "error";
-
         } else {
-
-            msg.textContent = "Thành công! Đang chuyển hướng...";
-
+            msg.textContent = "> ACCESS GRANTED! REDIRECTING...";
             msg.className = "success";
-
-            
-
             localStorage.setItem("userVerified", "true");
-
- 
-
             setTimeout(() => {
-
                 window.location.href = "index.html";
-
             }, 1000);
-
         }
-
     });
-
 }
 
- 
-
 document.getElementById("keyInput").addEventListener("keypress", e => {
-
     if (e.key === "Enter") startVerify();
-
 });
 
+// Resize canvas khi đổi kích thước màn hình
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
 </script>
 
- 
-
 </body>
-
-</html>
+        </html>
+    
