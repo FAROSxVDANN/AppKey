@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verify Key</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+    margin: 0; min-height: 100vh;
+    background: linear-gradient(135deg, #0f0f11, #000000);
+    background-image: radial-gradient(circle at 50% 0%, #1a3a5c 0%, transparent 70%);
+    display: flex; justify-content: center; align-items: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.glass-box {
+    width: 90%; max-width: 340px;
+    padding: 30px 25px;
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1);
+    text-align: center;
+}
+
+h3 { color: #fff; margin: 0 0 20px 0; font-weight: 500; letter-spacing: 0.5px; }
+
+input {
+    width: 100%; padding: 16px; margin-bottom: 15px;
+    border-radius: 16px; border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.3); color: #fff; font-size: 16px;
+    text-align: center; outline: none; transition: 0.3s;
+}
+
+input:focus { border-color: #0a84ff; background: rgba(0,0,0,0.5); }
+
+button {
+    width: 100%; padding: 16px; border: none; border-radius: 16px;
+    background: #0a84ff; color: #fff;
+    font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.3s;
+}
+
+button:hover { background: #0071e3; transform: scale(1.02); }
+button:active { transform: scale(0.98); }
+button:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+.progress-container {
+    margin-top: 15px; height: 6px; background: rgba(255,255,255,0.05);
+    border-radius: 10px; overflow: hidden; display: none;
+}
+
+.progress-bar {
+    height: 100%; width: 0%; background: #0a84ff;
+    border-radius: 10px; transition: width 0.1s linear;
+}
+
+#msg { margin-top: 15px; font-size: 13px; color: rgba(255,255,255,0.5); min-height: 20px; }
+.success { color: #32d74b !important; }
+.error { color: #ff453a !important; }
+</style>
+</head>
+
+<body>
+
+<div class="glass-box">
+    <h3>Xác Minh Hệ Thống</h3>
+    <input id="keyInput" placeholder="Nhập Key của bạn" autocomplete="off">
+    <button id="btnVerify" onclick="startVerify()">Đăng Nhập</button>
+
+    <div class="progress-container" id="progress">
+        <div class="progress-bar" id="bar"></div>
+    </div>
+
+    <div id="msg">Vui lòng nhập key để tiếp tục...</div>
+</div>
+
+<script>
+const firebaseConfig = {
+    apiKey: "AIzaSyAnZVbkcjZmVH8QC2mX6en3Rl68D2UnNTE",
+    databaseURL: "https://keyquocdat-default-rtdb.asia-southeast1.firebasedatabase.app"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.database().ref("keys");
+
+function startVerify() {
+    const key = document.getElementById("keyInput").value.trim().toUpperCase().replace(/\s+/g, "");
+    const msg = document.getElementById("msg");
+    const bar = document.getElementById("bar");
+    const progress = document.getElementById("progress");
+    const btn = document.getElementById("btnVerify");
+
+    if (!key) {
+        msg.textContent = "Bạn chưa nhập Key!";
+        msg.className = "error"; return;
+    }
+
+    btn.disabled = true;
+    document.getElementById("keyInput").disabled = true;
+    
+    bar.style.width = "0%";
+    progress.style.display = "block";
+    msg.textContent = "Đang kiểm tra dữ liệu...";
+    msg.className = "";
+
+    let percent = 0;
+    const interval = setInterval(() => {
+        percent += 5;
+        bar.style.width = percent + "%";
+
+        if (percent >= 100) {
+            clearInterval(interval);
+            verifyKeyInDatabase(key, msg, btn);
+        }
+    }, 30);
+}
+
+function verifyKeyInDatabase(key, msg, btn) {
+    const ref = db.child(key);
+
+    ref.transaction((currentData) => {
+        if (currentData === null) return null; 
+
+        if (currentData.type === "ONCE") {
+            if (currentData.used === true) return undefined;
+            currentData.used = true;
+            return currentData;
+        }
+
+        if (currentData.type === "TIME") {
+            if (Date.now() > currentData.expiresAt) return undefined;
+            return currentData;
+        }
+
+        if (currentData.type === "INFINITE") {
+            return currentData;
+        }
+
+        return undefined;
+    }, (error, committed, snapshot) => {
+        
+        btn.disabled = false;
+        document.getElementById("keyInput").disabled = false;
+
+        if (error) {
+            msg.textContent = "Lỗi kết nối máy chủ!";
+            msg.className = "error";
+        } else if (!snapshot.exists()) {
+            msg.textContent = "Key không tồn tại!";
+            msg.className = "error";
+        } else if (!committed) {
+            msg.textContent = "Key đã hết hạn sử dụng!";
+
+            msg.className = "error";
+
+        } else {
+
+            msg.textContent = "Thành công! Đang chuyển hướng...";
+
+            msg.className = "success";
+
+            
+
+            localStorage.setItem("userVerified", "true");
+
+ 
+
+            setTimeout(() => {
+
+                window.location.href = "index.html";
+
+            }, 1000);
+
+        }
+
+    });
+
+}
+
+ 
+
+document.getElementById("keyInput").addEventListener("keypress", e => {
+
+    if (e.key === "Enter") startVerify();
+
+});
+
+</script>
+
+ 
+
+</body>
+
+</html>
